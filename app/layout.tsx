@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: "ZenFlow",
   },
   verification: {
-    google: "0uij1KQxI3y69A0t73dYN22EuLVTkeHm4NtPirUNYoM",
+    google: "SHXBgKQDetfXVSTxrkNc3DpOPFOprbCzGpSiMs-tpKc",
   },
 };
 
