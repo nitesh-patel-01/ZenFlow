@@ -9,13 +9,6 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "ZenFlow",
-  },
-};
-
-export const metadata = {
-  title: "ZenFlow",
-  description: "All-in-one productivity and wellness web app",
-  verification: {
     google: "0uij1KQxI3y69A0t73dYN22EuLVTkeHm4NtPirUNYoM",
   },
 };
