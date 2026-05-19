@@ -12,6 +12,14 @@ export const metadata: Metadata = {
   },
 };
 
+export const metadata = {
+  title: "ZenFlow",
+  description: "All-in-one productivity and wellness web app",
+  verification: {
+    google: "0uij1KQxI3y69A0t73dYN22EuLVTkeHm4NtPirUNYoM",
+  },
+};
+
 export const viewport: Viewport = {
   themeColor: "#6c63ff",
   width: "device-width",
