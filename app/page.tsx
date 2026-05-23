@@ -10,17 +10,19 @@ import Calendar from './components/Calendar';
 import FocusTimer from './components/FocusTimer';
 import FrequencyTherapy from './components/FrequencyTherapy';
 import Settings from './components/Settings';
+import ProgressTracker from './components/ProgressTracker';
 
-type Tab = 'dashboard' | 'tasks' | 'notes' | 'calendar' | 'focus' | 'therapy' | 'settings';
+type Tab = 'dashboard' | 'tasks' | 'notes' | 'calendar' | 'focus' | 'progress' | 'therapy' | 'settings';
 
 const NAV = [
   { id: 'dashboard', icon: '⊞', label: 'Home' },
   { id: 'tasks', icon: '✓', label: 'Tasks' },
   { id: 'notes', icon: '✎', label: 'Notes' },
-  { id: 'calendar', icon: '◫', label: 'Calendar' },
   { id: 'focus', icon: '◎', label: 'Focus' },
-  { id: 'therapy', icon: '♫', label: 'Therapy' },
-  { id: 'settings', icon: '⚙', label: 'Settings' },
+  { id: 'progress', icon: '🔥', label: 'Streak' },
+  { id: 'calendar', icon: '◫', label: 'Cal' },
+  { id: 'therapy', icon: '♫', label: 'Sound' },
+  { id: 'settings', icon: '⚙', label: 'More' },
 ] as const;
 
 export default function App() {
@@ -52,9 +54,9 @@ export default function App() {
     if (tabParam && NAV.find(n => n.id === tabParam)) setTab(tabParam);
   }, [loadData]);
 
-  // Notification polling
+  // Notification polling — checks every 30 seconds
   useEffect(() => {
-    const interval = setInterval(async () => {
+    const poll = async () => {
       const [t, n] = await Promise.all([getTasks(), getNotes()]);
       const items = [
         ...t.map(task => ({ ...task, type: 'task' as const })),
@@ -74,7 +76,11 @@ export default function App() {
         if (note) await saveNote({ ...note, notified: true });
         loadData();
       });
-    }, 30000);
+    };
+
+    // Poll immediately, then every 30s
+    poll();
+    const interval = setInterval(poll, 30000);
     return () => clearInterval(interval);
   }, [loadData]);
 
@@ -100,6 +106,7 @@ export default function App() {
         {tab === 'notes' && <Notes notes={notes} onUpdate={loadData} />}
         {tab === 'calendar' && <Calendar tasks={tasks} notes={notes} />}
         {tab === 'focus' && <FocusTimer sessions={sessions} onUpdate={loadData} />}
+        {tab === 'progress' && <ProgressTracker />}
         {tab === 'therapy' && <FrequencyTherapy />}
         {tab === 'settings' && <Settings />}
       </main>
@@ -126,13 +133,13 @@ export default function App() {
               transition: 'color 0.2s',
             }}>
               <div style={{
-                fontSize: 20, lineHeight: 1,
+                fontSize: 18, lineHeight: 1,
                 transform: isActive ? 'scale(1.15)' : 'scale(1)',
                 transition: 'transform 0.2s',
               }}>
                 {item.icon}
               </div>
-              <span style={{ fontSize: 9, fontWeight: isActive ? 700 : 400, letterSpacing: 0.3 }}>
+              <span style={{ fontSize: 8, fontWeight: isActive ? 700 : 400, letterSpacing: 0.3 }}>
                 {item.label}
               </span>
               {isActive && (
