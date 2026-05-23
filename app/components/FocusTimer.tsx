@@ -23,6 +23,12 @@ export default function FocusTimer({ sessions, onUpdate }: FocusTimerProps) {
   const [sessionCount, setSessionCount] = useState(0);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  // Track raw text input for each mode to allow free typing
+  const [inputValues, setInputValues] = useState<Record<TimerMode, string>>({
+    focus: String(DEFAULTS.focus),
+    short_break: String(DEFAULTS.short_break),
+    long_break: String(DEFAULTS.long_break),
+  });
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedRef = useRef<number>(0);
 
@@ -87,10 +93,33 @@ export default function FocusTimer({ sessions, onUpdate }: FocusTimerProps) {
     setStartTime(null);
   }
 
-  function updateCustomMin(m: TimerMode, val: number) {
-    const updated = { ...customMins, [m]: val };
+  // Called when user types in the input field
+  function handleInputChange(m: TimerMode, raw: string) {
+    setInputValues(v => ({ ...v, [m]: raw }));
+    const val = parseInt(raw, 10);
+    if (!isNaN(val) && val >= 1 && val <= 180) {
+      const updated = { ...customMins, [m]: val };
+      setCustomMins(updated);
+      if (m === mode && !isRunning) setTimeLeft(val * 60);
+    }
+  }
+
+  // Clamp + sync on blur
+  function handleInputBlur(m: TimerMode) {
+    const val = parseInt(inputValues[m], 10);
+    const clamped = isNaN(val) ? DEFAULTS[m] : Math.min(180, Math.max(1, val));
+    setInputValues(v => ({ ...v, [m]: String(clamped) }));
+    const updated = { ...customMins, [m]: clamped };
     setCustomMins(updated);
-    if (m === mode && !isRunning) setTimeLeft(val * 60);
+    if (m === mode && !isRunning) setTimeLeft(clamped * 60);
+  }
+
+  function adjustMin(m: TimerMode, delta: number) {
+    const next = Math.min(180, Math.max(1, customMins[m] + delta));
+    setInputValues(v => ({ ...v, [m]: String(next) }));
+    const updated = { ...customMins, [m]: next };
+    setCustomMins(updated);
+    if (m === mode && !isRunning) setTimeLeft(next * 60);
   }
 
   const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
@@ -116,15 +145,39 @@ export default function FocusTimer({ sessions, onUpdate }: FocusTimerProps) {
         <div className="card" style={{ margin: '16px', padding: '16px' }}>
           <h4 style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>Custom Durations (minutes)</h4>
           {(['focus', 'short_break', 'long_break'] as TimerMode[]).map(m => (
-            <div key={m} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <span style={{ fontSize: 14, color: 'var(--text2)' }}>{LABELS[m]}</span>
+            <div key={m} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <span style={{ fontSize: 14, color: 'var(--text2)', minWidth: 90 }}>{LABELS[m]}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button onClick={() => updateCustomMin(m, Math.max(1, customMins[m] - 1))} style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--surface2)', color: 'var(--text)', fontSize: 16 }}>-</button>
-                <span style={{ fontSize: 16, fontWeight: 700, minWidth: 30, textAlign: 'center' }}>{customMins[m]}</span>
-                <button onClick={() => updateCustomMin(m, Math.min(120, customMins[m] + 1))} style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--surface2)', color: 'var(--text)', fontSize: 16 }}>+</button>
+                <button
+                  onClick={() => adjustMin(m, -1)}
+                  disabled={isRunning && m === mode}
+                  style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--surface2)', color: 'var(--text)', fontSize: 18, fontWeight: 700, flexShrink: 0 }}
+                >−</button>
+                {/* Direct input: user can type the value */}
+                <input
+                  type="number"
+                  min={1}
+                  max={180}
+                  value={inputValues[m]}
+                  disabled={isRunning && m === mode}
+                  onChange={e => handleInputChange(m, e.target.value)}
+                  onBlur={() => handleInputBlur(m)}
+                  style={{
+                    width: 56, textAlign: 'center', fontSize: 16, fontWeight: 700,
+                    background: 'var(--surface)', border: '1px solid var(--border)',
+                    borderRadius: 8, padding: '4px 6px', color: COLORS[m],
+                    MozAppearance: 'textfield',
+                  }}
+                />
+                <button
+                  onClick={() => adjustMin(m, 1)}
+                  disabled={isRunning && m === mode}
+                  style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--surface2)', color: 'var(--text)', fontSize: 18, fontWeight: 700, flexShrink: 0 }}
+                >+</button>
               </div>
             </div>
           ))}
+          <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>Range: 1–180 min. Type directly or use +/− buttons.</p>
         </div>
       )}
 
