@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getTasks, getNotes, getFocusSessions, saveTask, saveNote, Task, Note, FocusSession } from './lib/db';
-import { requestNotificationPermission, checkAndNotify } from './lib/notifications';
+import { requestNotificationPermission, checkAndNotify, syncRemindersToSW } from './lib/notifications';
 import Dashboard from './components/Dashboard';
 import TaskManager from './components/TaskManager';
 import Notes from './components/Notes';
@@ -16,13 +16,13 @@ type Tab = 'dashboard' | 'tasks' | 'notes' | 'calendar' | 'focus' | 'progress' |
 
 const NAV = [
   { id: 'dashboard', icon: '⊞', label: 'Home' },
-  { id: 'tasks', icon: '✓', label: 'Tasks' },
-  { id: 'notes', icon: '✎', label: 'Notes' },
-  { id: 'focus', icon: '◎', label: 'Focus' },
-  { id: 'progress', icon: '🔥', label: 'Streak' },
-  { id: 'calendar', icon: '◫', label: 'Cal' },
-  { id: 'therapy', icon: '♫', label: 'Sound' },
-  { id: 'settings', icon: '⚙', label: 'More' },
+  { id: 'tasks',     icon: '✓',  label: 'Tasks' },
+  { id: 'notes',     icon: '✎',  label: 'Notes' },
+  { id: 'focus',     icon: '◎',  label: 'Focus' },
+  { id: 'progress',  icon: '🔥', label: 'Streak' },
+  { id: 'calendar',  icon: '◫',  label: 'Cal' },
+  { id: 'therapy',   icon: '♫',  label: 'Sound' },
+  { id: 'settings',  icon: '⚙',  label: 'More' },
 ] as const;
 
 export default function App() {
@@ -37,24 +37,25 @@ export default function App() {
     setTasks(t);
     setNotes(n);
     setSessions(s);
+    // Every time data loads, push upcoming reminders into the Service Worker
+    // so it can fire notifications even when this tab is closed
+    syncRemindersToSW(t, n);
   }, []);
 
   useEffect(() => {
     loadData().then(() => setLoaded(true));
     requestNotificationPermission();
 
-    // Register service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
 
-    // Check URL params for tab
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get('tab') as Tab | null;
     if (tabParam && NAV.find(n => n.id === tabParam)) setTab(tabParam);
   }, [loadData]);
 
-  // Notification polling — checks every 30 seconds
+  // In-app foreground polling every 30s
   useEffect(() => {
     const poll = async () => {
       const [t, n] = await Promise.all([getTasks(), getNotes()]);
@@ -78,7 +79,6 @@ export default function App() {
       });
     };
 
-    // Poll immediately, then every 30s
     poll();
     const interval = setInterval(poll, 30000);
     return () => clearInterval(interval);
@@ -99,19 +99,17 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', position: 'relative' }}>
-      {/* Content */}
       <main style={{ minHeight: 'calc(100vh - 70px)', overflowY: 'auto' }}>
         {tab === 'dashboard' && <Dashboard tasks={tasks} notes={notes} sessions={sessions} onNavigate={(t) => setTab(t as Tab)} />}
-        {tab === 'tasks' && <TaskManager tasks={tasks} onUpdate={loadData} />}
-        {tab === 'notes' && <Notes notes={notes} onUpdate={loadData} />}
-        {tab === 'calendar' && <Calendar tasks={tasks} notes={notes} />}
-        {tab === 'focus' && <FocusTimer sessions={sessions} onUpdate={loadData} />}
-        {tab === 'progress' && <ProgressTracker />}
-        {tab === 'therapy' && <FrequencyTherapy />}
-        {tab === 'settings' && <Settings />}
+        {tab === 'tasks'     && <TaskManager tasks={tasks} onUpdate={loadData} />}
+        {tab === 'notes'     && <Notes notes={notes} onUpdate={loadData} />}
+        {tab === 'calendar'  && <Calendar tasks={tasks} notes={notes} />}
+        {tab === 'focus'     && <FocusTimer sessions={sessions} onUpdate={loadData} />}
+        {tab === 'progress'  && <ProgressTracker />}
+        {tab === 'therapy'   && <FrequencyTherapy />}
+        {tab === 'settings'  && <Settings />}
       </main>
 
-      {/* Bottom Nav */}
       <nav style={{
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: 480,
