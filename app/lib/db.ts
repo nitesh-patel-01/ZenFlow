@@ -40,11 +40,6 @@ export interface FocusSession {
   completedAt: string;
 }
 
-export interface Settings {
-  key: string;
-  value: unknown;
-}
-
 export interface Habit {
   id: string;
   name: string;
@@ -60,13 +55,17 @@ export interface HabitLog {
   completedAt: string;
 }
 
+export interface Settings {
+  key: string;
+  value: unknown;
+}
+
 let db: IDBPDatabase | null = null;
 
 export async function getDB() {
   if (db) return db;
   db = await openDB('zenflow-db', 2, {
     upgrade(database, oldVersion) {
-      // Version 1 stores
       if (oldVersion < 1) {
         if (!database.objectStoreNames.contains('tasks')) {
           const taskStore = database.createObjectStore('tasks', { keyPath: 'id' });
@@ -86,7 +85,6 @@ export async function getDB() {
           database.createObjectStore('settings', { keyPath: 'key' });
         }
       }
-      // Version 2 stores — habits & habit_logs
       if (oldVersion < 2) {
         if (!database.objectStoreNames.contains('habits')) {
           database.createObjectStore('habits', { keyPath: 'id' });
@@ -106,82 +104,73 @@ export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
-// Tasks
+// ── Tasks ────────────────────────────────────────────────────────────────────
 export async function getTasks(): Promise<Task[]> {
   const database = await getDB();
   return database.getAll('tasks');
 }
-
 export async function saveTask(task: Task): Promise<void> {
   const database = await getDB();
   await database.put('tasks', task);
 }
-
 export async function deleteTask(id: string): Promise<void> {
   const database = await getDB();
   await database.delete('tasks', id);
 }
 
-// Notes
+// ── Notes ────────────────────────────────────────────────────────────────────
 export async function getNotes(): Promise<Note[]> {
   const database = await getDB();
   return database.getAll('notes');
 }
-
 export async function saveNote(note: Note): Promise<void> {
   const database = await getDB();
   await database.put('notes', note);
 }
-
 export async function deleteNote(id: string): Promise<void> {
   const database = await getDB();
   await database.delete('notes', id);
 }
 
-// Focus Sessions
+// ── Focus Sessions ───────────────────────────────────────────────────────────
 export async function getFocusSessions(): Promise<FocusSession[]> {
   const database = await getDB();
   return database.getAll('focus_sessions');
 }
-
 export async function saveFocusSession(session: FocusSession): Promise<void> {
   const database = await getDB();
   await database.put('focus_sessions', session);
 }
 
-// Habits
+// ── Habits ───────────────────────────────────────────────────────────────────
 export async function getHabits(): Promise<Habit[]> {
   const database = await getDB();
   return database.getAll('habits');
 }
-
 export async function saveHabit(habit: Habit): Promise<void> {
   const database = await getDB();
   await database.put('habits', habit);
 }
-
 export async function deleteHabit(id: string): Promise<void> {
   const database = await getDB();
   await database.delete('habits', id);
 }
 
-// Habit Logs
+// ── Habit Logs ───────────────────────────────────────────────────────────────
 export async function getHabitLogs(): Promise<HabitLog[]> {
   const database = await getDB();
   return database.getAll('habit_logs');
 }
-
 export async function saveHabitLog(log: HabitLog): Promise<void> {
   const database = await getDB();
   await database.put('habit_logs', log);
 }
-
 export async function deleteHabitLog(id: string): Promise<void> {
   const database = await getDB();
   await database.delete('habit_logs', id);
 }
 
-// Settings
+// ── Settings ─────────────────────────────────────────────────────────────────
 export async function getSetting<T>(key: string, defaultValue: T): Promise<T> {
   try {
     const database = await getDB();
@@ -191,7 +180,6 @@ export async function getSetting<T>(key: string, defaultValue: T): Promise<T> {
     return defaultValue;
   }
 }
-
 export async function setSetting(key: string, value: unknown): Promise<void> {
   const database = await getDB();
   await database.put('settings', { key, value });
