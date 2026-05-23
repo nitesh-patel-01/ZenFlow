@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zenflow-v1';
+const CACHE_NAME = 'zenflow-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -42,15 +42,33 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+// Handle notification clicks — open/focus the app
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil(
-    clients.matchAll({ type: 'window' }).then((clientList) => {
-      if (clientList.length > 0) {
-        clientList[0].focus();
-      } else {
-        clients.openWindow('/');
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Focus existing window if open
+      for (const client of clientList) {
+        if ('focus' in client) return client.focus();
       }
+      // Otherwise open new window
+      if (clients.openWindow) return clients.openWindow('/');
+    })
+  );
+});
+
+// Handle push messages (future-proof for server push)
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  const data = event.data.json();
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'ZenFlow', {
+      body: data.body || '',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-72.png',
+      tag: data.tag || 'zenflow',
+      requireInteraction: true,
+      vibrate: [200, 100, 200],
     })
   );
 });
