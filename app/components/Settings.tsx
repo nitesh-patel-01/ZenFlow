@@ -78,9 +78,12 @@ export default function Settings() {
           </div>
           {notifPerm === 'denied' && (
             <div style={{ padding: '10px', background: 'rgba(248,113,113,0.1)', borderRadius: 8, fontSize: 12, color: 'var(--red)' }}>
-              Notifications blocked. Please enable in browser settings.
+              Notifications blocked. Please enable in browser/device settings.
             </div>
           )}
+          <div style={{ padding: '10px', background: 'rgba(108,99,255,0.08)', borderRadius: 8, fontSize: 12, color: 'var(--text2)', lineHeight: 1.7 }}>
+            💡 For alarms to ring when the app is in the background, install ZenFlow as a PWA and keep it open in a tab.
+          </div>
         </div>
       )
     },
@@ -90,7 +93,7 @@ export default function Settings() {
       content: (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
-            Install ZenFlow on your device for the best experience:
+            Install ZenFlow on your device for the best experience and reliable alarms:
           </p>
           <div style={{ padding: '12px', background: 'var(--bg3)', borderRadius: 10, fontSize: 12, color: 'var(--text2)', lineHeight: 1.8 }}>
             <strong style={{ color: 'var(--accent2)' }}>iOS Safari:</strong> Tap Share → Add to Home Screen<br />
@@ -132,6 +135,35 @@ export default function Settings() {
             <div>✅ No backend required</div>
             <div>✅ PWA installable</div>
             <div>✅ Local data storage</div>
+          </div>
+
+          {/* Developer Contact */}
+          <div style={{ marginTop: 16, padding: '14px', background: 'linear-gradient(135deg, rgba(108,99,255,0.12), rgba(34,211,165,0.08))', borderRadius: 12, border: '1px solid rgba(108,99,255,0.2)' }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--accent2)', marginBottom: 10 }}>🧑‍💻 Developer</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 16 }}>👤</span>
+                <span style={{ fontWeight: 600, color: 'var(--text)', fontSize: 14 }}>Nitesh Patel</span>
+              </div>
+              <a
+                href="tel:7974823298"
+                style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--accent)', textDecoration: 'none', fontSize: 13 }}
+              >
+                <span style={{ fontSize: 15 }}>📞</span>
+                <span>7974823298</span>
+              </a>
+              <a
+                href="mailto:niteshpatel7479@gmail.com"
+                style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--accent)', textDecoration: 'none', fontSize: 13 }}
+              >
+                <span style={{ fontSize: 15 }}>✉️</span>
+                <span>niteshpatel7479@gmail.com</span>
+              </a>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 10, textAlign: 'center', fontSize: 11, color: 'var(--text3)' }}>
+            Made with ❤️ by Nitesh
           </div>
         </div>
       )
