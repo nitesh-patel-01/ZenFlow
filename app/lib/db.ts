@@ -45,28 +45,57 @@ export interface Settings {
   value: unknown;
 }
 
+export interface Habit {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  createdAt: string;
+}
+
+export interface HabitLog {
+  id: string;
+  habitId: string;
+  date: string; // yyyy-MM-dd
+  completedAt: string;
+}
+
 let db: IDBPDatabase | null = null;
 
 export async function getDB() {
   if (db) return db;
-  db = await openDB('zenflow-db', 1, {
-    upgrade(database) {
-      if (!database.objectStoreNames.contains('tasks')) {
-        const taskStore = database.createObjectStore('tasks', { keyPath: 'id' });
-        taskStore.createIndex('folder', 'folder');
-        taskStore.createIndex('priority', 'priority');
-        taskStore.createIndex('completed', 'completed');
-        taskStore.createIndex('dueDate', 'dueDate');
+  db = await openDB('zenflow-db', 2, {
+    upgrade(database, oldVersion) {
+      // Version 1 stores
+      if (oldVersion < 1) {
+        if (!database.objectStoreNames.contains('tasks')) {
+          const taskStore = database.createObjectStore('tasks', { keyPath: 'id' });
+          taskStore.createIndex('folder', 'folder');
+          taskStore.createIndex('priority', 'priority');
+          taskStore.createIndex('completed', 'completed');
+          taskStore.createIndex('dueDate', 'dueDate');
+        }
+        if (!database.objectStoreNames.contains('notes')) {
+          const noteStore = database.createObjectStore('notes', { keyPath: 'id' });
+          noteStore.createIndex('folder', 'folder');
+        }
+        if (!database.objectStoreNames.contains('focus_sessions')) {
+          database.createObjectStore('focus_sessions', { keyPath: 'id' });
+        }
+        if (!database.objectStoreNames.contains('settings')) {
+          database.createObjectStore('settings', { keyPath: 'key' });
+        }
       }
-      if (!database.objectStoreNames.contains('notes')) {
-        const noteStore = database.createObjectStore('notes', { keyPath: 'id' });
-        noteStore.createIndex('folder', 'folder');
-      }
-      if (!database.objectStoreNames.contains('focus_sessions')) {
-        database.createObjectStore('focus_sessions', { keyPath: 'id' });
-      }
-      if (!database.objectStoreNames.contains('settings')) {
-        database.createObjectStore('settings', { keyPath: 'key' });
+      // Version 2 stores — habits & habit_logs
+      if (oldVersion < 2) {
+        if (!database.objectStoreNames.contains('habits')) {
+          database.createObjectStore('habits', { keyPath: 'id' });
+        }
+        if (!database.objectStoreNames.contains('habit_logs')) {
+          const logStore = database.createObjectStore('habit_logs', { keyPath: 'id' });
+          logStore.createIndex('habitId', 'habitId');
+          logStore.createIndex('date', 'date');
+        }
       }
     },
   });
@@ -118,6 +147,38 @@ export async function getFocusSessions(): Promise<FocusSession[]> {
 export async function saveFocusSession(session: FocusSession): Promise<void> {
   const database = await getDB();
   await database.put('focus_sessions', session);
+}
+
+// Habits
+export async function getHabits(): Promise<Habit[]> {
+  const database = await getDB();
+  return database.getAll('habits');
+}
+
+export async function saveHabit(habit: Habit): Promise<void> {
+  const database = await getDB();
+  await database.put('habits', habit);
+}
+
+export async function deleteHabit(id: string): Promise<void> {
+  const database = await getDB();
+  await database.delete('habits', id);
+}
+
+// Habit Logs
+export async function getHabitLogs(): Promise<HabitLog[]> {
+  const database = await getDB();
+  return database.getAll('habit_logs');
+}
+
+export async function saveHabitLog(log: HabitLog): Promise<void> {
+  const database = await getDB();
+  await database.put('habit_logs', log);
+}
+
+export async function deleteHabitLog(id: string): Promise<void> {
+  const database = await getDB();
+  await database.delete('habit_logs', id);
 }
 
 // Settings
