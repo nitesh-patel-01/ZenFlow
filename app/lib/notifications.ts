@@ -7,8 +7,29 @@ export async function requestNotificationPermission(): Promise<boolean> {
   return perm === 'granted';
 }
 
-export function sendNotification(title: string, body: string, tag?: string) {
+// Use Service Worker showNotification for proper OS-level notifications (shows on home screen / notification tray)
+export async function sendNotification(title: string, body: string, tag?: string) {
   if (Notification.permission !== 'granted') return;
+
+  // Prefer SW registration for proper system notifications
+  if ('serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification(title, {
+        body,
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-72.png',
+        tag: tag || title,
+        requireInteraction: true,
+        vibrate: [200, 100, 200],
+      } as NotificationOptions);
+      return;
+    } catch {
+      // fallback below
+    }
+  }
+
+  // Fallback: plain Notification API
   const n = new Notification(title, {
     body,
     icon: '/icons/icon-192.png',
@@ -36,10 +57,10 @@ export function playAlertTone(type: 'task' | 'note' | 'timer' = 'task') {
       osc.frequency.value = freq;
       osc.type = 'sine';
       const t = ctx.currentTime + i * 0.2;
-      gain.gain.setValueAtTime(0.3, t);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+      gain.gain.setValueAtTime(0.4, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
       osc.start(t);
-      osc.stop(t + 0.4);
+      osc.stop(t + 0.5);
     });
   } catch { /* ignore */ }
 }
@@ -76,10 +97,8 @@ export function checkAndNotify(
     }
 
     if (targetDate && now >= targetDate) {
-      sendNotification(
-        item.type === 'task' ? '⏰ Task Reminder' : '📝 Note Reminder',
-        item.title
-      );
+      const label = item.type === 'task' ? '⏰ Task Reminder' : '📝 Note Reminder';
+      sendNotification(label, item.title, item.id);
       playAlertTone(item.type);
       onNotify(item.id);
     }
