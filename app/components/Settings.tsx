@@ -165,6 +165,9 @@ export default function Settings() {
           <div style={{ marginTop: 10, textAlign: 'center', fontSize: 11, color: 'var(--text3)' }}>
             Made with ❤️ by Nitesh
           </div>
+          <div style={{ marginTop: 6, textAlign: 'center', fontSize: 11, color: 'var(--text3)' }}>
+            Also by Nitesh: <a href="https://aniloveindia.com/" target="_blank" rel="noopener" style={{ color: 'var(--text3)' }}>AniLove India — Watch Anime in Hindi</a>
+          </div>
         </div>
       )
     }
